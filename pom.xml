@@ -26,19 +26,6 @@
         </dependency>
     </dependencies>
 
-    <distributionManagement>
-        <repository>
-            <id>jfrog-releases</id>
-            <name>JFrog Artifactory Releases</name>
-            <url>https://infomagnus.jfrog.io/artifactory/libs-release-local</url>
-        </repository>
-        <snapshotRepository>
-            <id>jfrog-snapshots</id>
-            <name>JFrog Artifactory Snapshots</name>
-            <url>https://infomagnus.jfrog.io/artifactory/libs-snapshot-local</url>
-        </snapshotRepository>
-    </distributionManagement>
-
     <build>
         <finalName>sample-webapp</finalName>
         <plugins>
