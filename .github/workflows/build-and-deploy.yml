@@ -1,0 +1,65 @@
+name: Build and Deploy WAR to JFrog Artifactory
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+
+      - name: Build WAR with Maven
+        run: mvn clean package
+
+      - name: Setup JFrog CLI
+        uses: jfrog/setup-jfrog-cli@v4
+        env:
+          JF_URL: ${{ secrets.JF_URL }}
+          JF_ACCESS_TOKEN: ${{ secrets.JF_ACCESS_TOKEN }}
+
+      - name: Configure Maven for JFrog
+        run: |
+          mkdir -p ~/.m2
+          cat > ~/.m2/settings.xml << 'EOF'
+          <settings>
+            <servers>
+              <server>
+                <id>jfrog-releases</id>
+                <username>${{ secrets.JF_USER }}</username>
+                <password>${{ secrets.JF_ACCESS_TOKEN }}</password>
+              </server>
+              <server>
+                <id>jfrog-snapshots</id>
+                <username>${{ secrets.JF_USER }}</username>
+                <password>${{ secrets.JF_ACCESS_TOKEN }}</password>
+              </server>
+            </servers>
+          </settings>
+          EOF
+
+      - name: Deploy WAR to JFrog Artifactory
+        run: mvn deploy -DskipTests
+
+      - name: Upload WAR to JFrog Artifactory
+        run: |
+          jf rt upload \
+            "target/sample-webapp.war" \
+            "libs-release-local/com/example/sample-webapp/1.0.0/sample-webapp-1.0.0.war" \
+            --build-name="sample-webapp" \
+            --build-number="${{ github.run_number }}"
+
+      - name: Publish Build Info
+        run: |
+          jf rt build-publish "sample-webapp" "${{ github.run_number }}"
